@@ -4,44 +4,49 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ExampleSubsystem extends SubsystemBase {
-  /** Creates a new ExampleSubsystem. */
-  public ExampleSubsystem() {}
+    private final TalonFX motor;
 
-  /**
-   * Example command factory method.
-   *
-   * @return a command
-   */
-  public Command exampleMethodCommand() {
-    // Inline construction of command goes here.
-    // Subsystem::RunOnce implicitly requires `this` subsystem.
-    return runOnce(
-        () -> {
-          /* one-time action goes here */
-        });
-  }
+    private final DCMotorSim motorSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+            DCMotor.getKrakenX60Foc(1),
+            0.001,
+            1.0
+        ),
+        DCMotor.getKrakenX60Foc(1)
+    );
 
-  /**
-   * An example method querying a boolean state of the subsystem (for example, a digital sensor).
-   *
-   * @return value of some boolean subsystem state, such as a digital sensor.
-   */
-  public boolean exampleCondition() {
-    // Query some boolean state, such as a digital sensor.
-    return false;
-  }
+    public ExampleSubsystem() {
+        motor = new TalonFX(15);
+    }
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
-  }
+    // Students: add your motor command here.
 
-  @Override
-  public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
-  }
+    @Override
+    public void periodic() {}
+
+    @Override
+    public void simulationPeriodic() {
+        var motorSimState = motor.getSimState();
+
+        motorSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+        var motorVoltage = motorSimState.getMotorVoltageMeasure();
+        motorSim.setInputVoltage(motorVoltage.in(Volts));
+        motorSim.update(0.020);
+
+        motorSimState.setRawRotorPosition(motorSim.getAngularPosition());
+        motorSimState.setRotorVelocity(motorSim.getAngularVelocity());
+    }
 }
